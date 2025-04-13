@@ -8,13 +8,15 @@ pipeline {
         stage('Build') {
             steps {
                 script {
-                    docker.build("${IMAGE_NAME}")
+                    // Build the Docker image
+                    docker.build("${IMAGE_NAME}", ".")
                 }
             }
         }
         stage('Scan for vulnerabilities') {
             steps {
                 script {
+                    // Scan the image with Trivy
                     sh "trivy image ${REGISTRY}/${IMAGE_NAME}"
                 }
             }
@@ -22,8 +24,9 @@ pipeline {
         stage('Push to Registry') {
             steps {
                 script {
-                    docker.tag("${IMAGE_NAME}", "${REGISTRY}/${IMAGE_NAME}")
-                    docker.push("${REGISTRY}/${IMAGE_NAME}")
+                    // Tag and push the Docker image to the registry
+                    docker.tag("${IMAGE_NAME}", "${REGISTRY}/${IMAGE_NAME}:latest")
+                    docker.push("${REGISTRY}/${IMAGE_NAME}:latest")
                 }
             }
         }
