@@ -1,31 +1,45 @@
 pipeline {
     agent any
+
     environment {
-        REGISTRY = 'localhost:5000'
         IMAGE_NAME = 'myimage'
+        REGISTRY = 'localhost:5000'
+        IMAGE_TAG = 'latest'
+        IMAGE_FULL = "${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+        TRIVY_CONTAINER_ENGINE = 'docker' // 👈 Important fix here
     }
+
     stages {
-        stage('Build') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${IMAGE_NAME}")
+                    sh 'docker build -t ${IMAGE_FULL} .'
                 }
             }
         }
-        stage('Scan for vulnerabilities') {
-            steps {
-                script {
-                    sh "trivy image ${REGISTRY}/${IMAGE_NAME}"
-                }
-            }
-        }
+
         stage('Push to Registry') {
             steps {
                 script {
-                    docker.tag("${IMAGE_NAME}", "${REGISTRY}/${IMAGE_NAME}")
-                    docker.push("${REGISTRY}/${IMAGE_NAME}")
+                    sh 'docker push ${IMAGE_FULL}'
                 }
             }
+        }
+
+        stage('Scan for Vulnerabilities') {
+            steps {
+                script {
+                    sh 'docker pull ${IMAGE_FULL} || echo "Already available"'
+                    sh 'trivy image ${IMAGE_FULL}'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Cleaning up images..."
+            sh 'docker rmi ${IMAGE_FULL} || true'
         }
     }
 }
