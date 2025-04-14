@@ -2,44 +2,54 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'myimage'
-        REGISTRY = 'localhost:5000'
-        IMAGE_TAG = 'latest'
-        IMAGE_FULL = "${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
-        TRIVY_CONTAINER_ENGINE = 'docker' // 👈 Important fix here
+        IMAGE_NAME = "myapp"
+        IMAGE_TAG = "${env.BUILD_ID}"
+        LOCAL_REGISTRY = "localhost:5000"
+        FULL_IMAGE_NAME = "${LOCAL_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+        SCAN_REPORT = "trivy-report-${IMAGE_TAG}.txt"
     }
 
     stages {
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh 'docker build -t ${IMAGE_FULL} .'
+                    sh "docker build -t ${FULL_IMAGE_NAME} ."
                 }
             }
         }
 
-        stage('Push to Registry') {
+        stage('Trivy Vulnerability Scan') {
             steps {
                 script {
-                    sh 'docker push ${IMAGE_FULL}'
+                    sh "trivy image --severity HIGH,CRITICAL --format table --output ${SCAN_REPORT} ${FULL_IMAGE_NAME}"
                 }
             }
         }
 
-        stage('Scan for Vulnerabilities') {
+        stage('Push to Local Registry') {
             steps {
                 script {
-                    sh 'docker pull ${IMAGE_FULL} || echo "Already available"'
-                    sh 'trivy image ${IMAGE_FULL}'
+                    sh "docker push ${FULL_IMAGE_NAME}"
                 }
+            }
+        }
+
+        stage('Archive Scan Report') {
+            steps {
+                archiveArtifacts artifacts: "${SCAN_REPORT}", fingerprint: true
             }
         }
     }
 
     post {
         always {
-            echo "Cleaning up images..."
-            sh 'docker rmi ${IMAGE_FULL} || true'
+            cleanWs()
         }
     }
 }
