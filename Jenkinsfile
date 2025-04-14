@@ -2,15 +2,13 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "myapp"
-        IMAGE_TAG = "${env.BUILD_ID}"
-        LOCAL_REGISTRY = "localhost:5000"
-        FULL_IMAGE_NAME = "${LOCAL_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
-        SCAN_REPORT = "trivy-report-${IMAGE_TAG}.txt"
+        DOCKER_REGISTRY = 'localhost:5000'
+        IMAGE_NAME = 'myapp'
+        IMAGE_TAG = '5'
     }
 
     stages {
-        stage('Checkout Code') {
+        stage('Checkout SCM') {
             steps {
                 checkout scm
             }
@@ -19,7 +17,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh "docker build -t ${FULL_IMAGE_NAME} ."
+                    sh 'docker build -t $DOCKER_REGISTRY/$IMAGE_NAME:$IMAGE_TAG .'
                 }
             }
         }
@@ -27,7 +25,7 @@ pipeline {
         stage('Trivy Vulnerability Scan') {
             steps {
                 script {
-                    sh "trivy image --severity HIGH,CRITICAL --format table --output ${SCAN_REPORT} ${FULL_IMAGE_NAME}"
+                    sh 'trivy image --severity HIGH,CRITICAL --format table --output trivy-report-$IMAGE_TAG.txt $DOCKER_REGISTRY/$IMAGE_NAME:$IMAGE_TAG'
                 }
             }
         }
@@ -35,21 +33,26 @@ pipeline {
         stage('Push to Local Registry') {
             steps {
                 script {
-                    sh "docker push ${FULL_IMAGE_NAME}"
+                    sh 'docker push $DOCKER_REGISTRY/$IMAGE_NAME:$IMAGE_TAG'
                 }
             }
         }
 
         stage('Archive Scan Report') {
             steps {
-                archiveArtifacts artifacts: "${SCAN_REPORT}", fingerprint: true
+                script {
+                    // Archive the Trivy scan report
+                    archiveArtifacts allowEmptyArchive: true, artifacts: "trivy-report-$IMAGE_TAG.txt", followSymlinks: false
+                }
             }
         }
     }
 
     post {
         always {
-            cleanWs()
+            cleanWs() // Clean up workspace
+            // Archive the report after the pipeline completes
+            archiveArtifacts allowEmptyArchive: true, artifacts: "trivy-report-$IMAGE_TAG.txt", followSymlinks: false
         }
     }
 }
