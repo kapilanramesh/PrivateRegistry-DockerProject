@@ -1,0 +1,156 @@
+Started by GitHub push by kapilanramesh
+Obtained Jenkinsfile from git https://github.com/kapilanramesh/docker-project
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on Jenkins in /var/lib/jenkins/workspace/Docker-project
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Declarative: Checkout SCM)
+[Pipeline] checkout
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+using credential ubuntu-ssh
+Cloning the remote Git repository
+Cloning repository https://github.com/kapilanramesh/docker-project
+ > git init /var/lib/jenkins/workspace/Docker-project # timeout=10
+Fetching upstream changes from https://github.com/kapilanramesh/docker-project
+ > git --version # timeout=10
+ > git --version # 'git version 2.43.0'
+using GIT_SSH to set credentials ssh of ubuntu user
+Verifying host key using known hosts file
+ > git fetch --tags --force --progress -- https://github.com/kapilanramesh/docker-project +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git config remote.origin.url https://github.com/kapilanramesh/docker-project # timeout=10
+ > git config --add remote.origin.fetch +refs/heads/*:refs/remotes/origin/* # timeout=10
+Avoid second fetch
+ > git rev-parse refs/remotes/origin/main^{commit} # timeout=10
+Checking out Revision 85c8e44ca52d032f80bbe07a56168bb95e03ff80 (refs/remotes/origin/main)
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f 85c8e44ca52d032f80bbe07a56168bb95e03ff80 # timeout=10
+Commit message: "Jenkinsfile"
+ > git rev-list --no-walk 540ada2dfac698e0dd11d401704ed8e5065b81a9 # timeout=10
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Checkout SCM)
+[Pipeline] checkout
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+using credential ubuntu-ssh
+ > git rev-parse --resolve-git-dir /var/lib/jenkins/workspace/Docker-project/.git # timeout=10
+Fetching changes from the remote Git repository
+ > git config remote.origin.url https://github.com/kapilanramesh/docker-project # timeout=10
+Fetching upstream changes from https://github.com/kapilanramesh/docker-project
+ > git --version # timeout=10
+ > git --version # 'git version 2.43.0'
+using GIT_SSH to set credentials ssh of ubuntu user
+Verifying host key using known hosts file
+ > git fetch --tags --force --progress -- https://github.com/kapilanramesh/docker-project +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git rev-parse refs/remotes/origin/main^{commit} # timeout=10
+Checking out Revision 85c8e44ca52d032f80bbe07a56168bb95e03ff80 (refs/remotes/origin/main)
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f 85c8e44ca52d032f80bbe07a56168bb95e03ff80 # timeout=10
+Commit message: "Jenkinsfile"
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Build Docker Image)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] sh
++ docker build -t localhost:5000/myapp:5 .
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 150B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/ubuntu:20.04
+#2 DONE 0.6s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 63B done
+#3 DONE 0.0s
+
+#4 [1/2] FROM docker.io/library/ubuntu:20.04@sha256:8feb4d8ca5354def3d8fce243717141ce31e2c428701f6682bd2fafe15388214
+#4 DONE 0.0s
+
+#5 [2/2] RUN apt-get update && apt-get install -y nginx
+#5 CACHED
+
+#6 exporting to image
+#6 exporting layers done
+#6 writing image sha256:48810140919ba52c9bf5e60ca66eb29157e3baf5099cb1be81a15dab7619edce done
+#6 naming to localhost:5000/myapp:5 done
+#6 DONE 0.0s
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Trivy Vulnerability Scan)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] sh
++ trivy image --severity HIGH,CRITICAL --format table --output trivy-report-5.txt localhost:5000/myapp:5
+2025-04-14T06:20:48.734Z	[34mINFO[0m	Detected OS: ubuntu
+2025-04-14T06:20:48.734Z	[34mINFO[0m	Detecting Ubuntu vulnerabilities...
+2025-04-14T06:20:48.736Z	[34mINFO[0m	Number of language-specific files: 0
+
+localhost:5000/myapp:5 (ubuntu 20.04)
+=====================================
+Total: 0 (HIGH: 0, CRITICAL: 0)
+
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Push to Local Registry)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] sh
++ docker push localhost:5000/myapp:5
+The push refers to repository [localhost:5000/myapp]
+e16022559473: Preparing
+470b66ea5123: Preparing
+470b66ea5123: Layer already exists
+e16022559473: Layer already exists
+5: digest: sha256:e17a0ae32962ce5f6466362e904caa8e2f3c6dd71deb1b5259a12f7cc7c20bbd size: 741
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Archive Scan Report)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] fileExists
+[Pipeline] archiveArtifacts
+Archiving artifacts
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Declarative: Post Actions)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] fileExists
+[Pipeline] archiveArtifacts
+Archiving artifacts
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+Finished: SUCCESS
