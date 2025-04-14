@@ -17,7 +17,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh 'docker build -t $DOCKER_REGISTRY/$IMAGE_NAME:$IMAGE_TAG .'
+                    sh 'docker build -t ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} .'
                 }
             }
         }
@@ -25,7 +25,7 @@ pipeline {
         stage('Trivy Vulnerability Scan') {
             steps {
                 script {
-                    sh 'trivy image --severity HIGH,CRITICAL --format table --output trivy-report-$IMAGE_TAG.txt $DOCKER_REGISTRY/$IMAGE_NAME:$IMAGE_TAG'
+                    sh "trivy image --severity HIGH,CRITICAL --format table --output trivy-report-${IMAGE_TAG}.txt ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
                 }
             }
         }
@@ -33,7 +33,7 @@ pipeline {
         stage('Push to Local Registry') {
             steps {
                 script {
-                    sh 'docker push $DOCKER_REGISTRY/$IMAGE_NAME:$IMAGE_TAG'
+                    sh "docker push ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
                 }
             }
         }
@@ -41,8 +41,13 @@ pipeline {
         stage('Archive Scan Report') {
             steps {
                 script {
-                    // Archive the Trivy scan report
-                    archiveArtifacts allowEmptyArchive: true, artifacts: "trivy-report-$IMAGE_TAG.txt", followSymlinks: false
+                    // Ensure the file exists before archiving
+                    def reportFile = "trivy-report-${IMAGE_TAG}.txt"
+                    if (fileExists(reportFile)) {
+                        archiveArtifacts allowEmptyArchive: true, artifacts: reportFile, followSymlinks: false
+                    } else {
+                        echo "Trivy report file not found: ${reportFile}"
+                    }
                 }
             }
         }
@@ -50,9 +55,15 @@ pipeline {
 
     post {
         always {
-            cleanWs() // Clean up workspace
-            // Archive the report after the pipeline completes
-            archiveArtifacts allowEmptyArchive: true, artifacts: "trivy-report-$IMAGE_TAG.txt", followSymlinks: false
+            // Ensure the file exists before archiving
+            script {
+                def reportFile = "trivy-report-${IMAGE_TAG}.txt"
+                if (fileExists(reportFile)) {
+                    archiveArtifacts allowEmptyArchive: true, artifacts: reportFile, followSymlinks: false
+                } else {
+                    echo "Trivy report file not found: ${reportFile}"
+                }
+            }
         }
     }
 }
