@@ -215,9 +215,3 @@ This Jenkinsfile is used to automate the build, scan, and push process for Docke
         
     - You can review the vulnerabilities that were detected during the scan.
         
-
-## Sample Output / Screenshot
-
-(Insert sample output or screenshot here)
-
----
