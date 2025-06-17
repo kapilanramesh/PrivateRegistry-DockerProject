@@ -72,7 +72,6 @@ This project demonstrates how to set up a **custom Docker registry**, integrate 
     ```
     **or for more secured step :**
    
-   ```bash
    #🔁 HTTP Server Block – Redirect to HTTPS
 server {
     listen 80;
@@ -93,7 +92,7 @@ server {
         proxy_pass http://localhost:5000;  # or static content
     }
 }
-```
+
 **📂 Where Do You Put This?**
 
 You can put both server {} blocks in:
@@ -102,7 +101,8 @@ You can put both server {} blocks in:
 
 **Or better**: create a new config file like /etc/nginx/sites-available/registry
 
-Then symlink it:
+**Then symlink it:**
+
 ```bash
 sudo ln -s /etc/nginx/sites-available/registry /etc/nginx/sites-enabled/
 sudo nginx -t    # check for syntax errors
