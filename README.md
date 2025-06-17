@@ -53,7 +53,7 @@ This project demonstrates how to set up a **custom Docker registry**, integrate 
     
 3. **Configure NGINX**:
     
-    Edit the NGINX configuration file (`/etc/nginx/sites-available/default`) to add basic authentication to your Docker registry.
+    Edit the NGINX configuration file to add basic authentication to your Docker registry.
    
     ```nginx
     server {
