@@ -20,11 +20,6 @@ This project demonstrates how to set up a **custom Docker registry**, integrate 
 - **Trivy**: A tool for scanning Docker images for vulnerabilities.
     
 - **NGINX Basic Auth**: Adds basic authentication to the registry for security.
-    
-
-## Architecture Diagram
-
-(Insert diagram here)
 
 ### Key Architecture Components:
 
