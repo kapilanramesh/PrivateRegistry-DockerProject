@@ -70,8 +70,46 @@ This project demonstrates how to set up a **custom Docker registry**, integrate 
         }
     }
     ```
+    **or for more secured step :**
+   
+   ```bash
+   #🔁 HTTP Server Block – Redirect to HTTPS
+server {
+    listen 80;
+    server_name yourdomain.com;
+
+    return 301 https://$host$request_uri;
+}
+
+ #🔐 HTTPS Server Block – Serve Secure Content
+server {
+    listen 443 ssl;
+    server_name yourdomain.com;
+
+    ssl_certificate /etc/ssl/certs/your-cert.crt;
+    ssl_certificate_key /etc/ssl/private/your-cert.key;
+
+    location / {
+        proxy_pass http://localhost:5000;  # or static content
+    }
+}
+```
+**📂 Where Do You Put This?**
+
+You can put both server {} blocks in:
+
+/etc/nginx/sites-available/default (for quick testing)
+
+**Or better**: create a new config file like /etc/nginx/sites-available/registry
+
+Then symlink it:
+```bash
+sudo ln -s /etc/nginx/sites-available/registry /etc/nginx/sites-enabled/
+sudo nginx -t    # check for syntax errors
+sudo systemctl reload nginx
+```
     
-4. **Restart NGINX**:
+5. **Restart NGINX**:
     
     After configuring NGINX, restart the service.
     
@@ -79,7 +117,7 @@ This project demonstrates how to set up a **custom Docker registry**, integrate 
     sudo systemctl restart nginx
     ```
     
-5. **Test the authentication**:
+6. **Test the authentication**:
     
     Try accessing the registry URL (`http://localhost:5000`) in a browser or through a `curl` command. You should be prompted for the username and password you created.
     
