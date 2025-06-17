@@ -54,9 +54,7 @@ This project demonstrates how to set up a **custom Docker registry**, integrate 
 3. **Configure NGINX**:
     
     Edit the NGINX configuration file (`/etc/nginx/sites-available/default`) to add basic authentication to your Docker registry.
-    
-    Example:
-    
+   
     ```nginx
     server {
         listen 80;
@@ -117,7 +115,8 @@ sudo systemctl reload nginx
     
 6. **Test the authentication**:
     
-    Try accessing the registry URL (`http://localhost:5000`) in a browser or through a `curl` command. You should be prompted for the username and password you created.
+    Try accessing the registry URL (`http://localhost:5000`) in a browser or through a `curl` command.
+    You should be prompted for the username and password you created.
     
 
 ### Local Docker Registry Config
