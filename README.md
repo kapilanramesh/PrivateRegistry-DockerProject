@@ -143,7 +143,7 @@ sudo systemctl reload nginx
     }
     ```
     
-    Then restart Docker:
+ 3.  **Then restart Docker**: 
     
     ```bash
     sudo systemctl restart docker
