@@ -97,10 +97,6 @@ server {
 
 **📂 Where Do You Put This?**
 
-You can put both server {} blocks in:
-
-/etc/nginx/sites-available/default (for quick testing)
-
 **Or better**: create a new config file like /etc/nginx/sites-available/registry
 
 **Then symlink it:**
