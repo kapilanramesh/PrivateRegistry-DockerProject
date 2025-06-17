@@ -73,24 +73,24 @@ This project demonstrates how to set up a **custom Docker registry**, integrate 
  **or for more secured step :**
 
 ```nginx
-# 🔁 HTTP Server Block – Redirect to HTTPS
+# 🔁 Redirect HTTP to HTTPS
 server {
     listen 80;
-    server_name yourdomain.com;
+    server_name myregistry.example.com;
 
     return 301 https://$host$request_uri;
 }
 
-# 🔐 HTTPS Server Block – Serve Secure Content
+# 🔐 HTTPS Server Block – Serve Secure Docker Registry
 server {
     listen 443 ssl;
-    server_name yourdomain.com;
+    server_name myregistry.example.com;
 
     ssl_certificate /etc/ssl/certs/your-cert.crt;
     ssl_certificate_key /etc/ssl/private/your-cert.key;
 
     location / {
-        proxy_pass http://localhost:5000;  # or static content
+        proxy_pass http://localhost:5000;
     }
 }
 ```
