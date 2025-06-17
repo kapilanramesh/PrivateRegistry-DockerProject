@@ -96,11 +96,8 @@ server {
 ```
 
 **📂 Where Do You Put This?**
-
-**Or better**: create a new config file like /etc/nginx/sites-available/registry
-
+create a new config file like /etc/nginx/sites-available/registry
 **Then symlink it:**
-
 ```bash
 sudo ln -s /etc/nginx/sites-available/registry /etc/nginx/sites-enabled/
 sudo nginx -t    # check for syntax errors
