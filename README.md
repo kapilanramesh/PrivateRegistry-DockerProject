@@ -136,7 +136,7 @@ sudo systemctl reload nginx
     
     The Docker registry will be accessible on `localhost:5000`.
 
-2. **Configure Docker to use the local registry**:
+2. **Configure Docker to use the local registry**:  (only for HTTP type registry, No need this if you configure HTTPS in Nginx server)
 
     To push and pull images, you’ll need to configure Docker to trust the registry.
     
