@@ -124,5 +124,3 @@ This Jenkins pipeline automates the process of building a Docker image, scanning
 * This pipeline is fully automated and **idempotent**, meaning it can run multiple times without breaking.
 
 ---
-
-Do you want me to make that diagram?
