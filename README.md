@@ -1,247 +1,128 @@
-# Docker Project with Custom Registry + CI/CD + Vulnerability Scanning
+---
 
+# Jenkins CI/CD Pipeline with Local Docker Registry & Trivy Vulnerability Scanning
 
-README based on the structure we discussed:
+This Jenkins pipeline automates the process of building a Docker image, scanning it for vulnerabilities using **Trivy**, and pushing it to a **local Docker registry**. The pipeline ensures that the local registry is running and archives the scan report for future reference.
 
 ---
 
-# Docker Project with Custom Registry + CI/CD + Vulnerability Scanning
+## Features
 
-## Project Overview
+1. **Automated Docker image build**
 
-This project demonstrates how to set up a **custom Docker registry**, integrate a **CI/CD pipeline using Jenkins**, and perform **vulnerability scanning** on Docker images using **Trivy**.
+   * Builds a Docker image from the repository’s `Dockerfile`.
 
-### Key Components:
+2. **Secure Trivy installation**
 
-- **Custom Docker Registry**: A local registry to push and store Docker images.
-    
-- **CI/CD Pipeline**: Jenkins pipeline automating the build, scan, and push process.
-    
-- **Trivy**: A tool for scanning Docker images for vulnerabilities.
-    
-- **NGINX Basic Auth**: Adds basic authentication to the registry for security.
+   * Checks if Trivy is installed; if not, installs it using the **APT method** with repository and GPG key verification.
+   * Ensures authenticity of the Trivy package.
 
-### Key Architecture Components:
+3. **Vulnerability scanning**
 
-- **Jenkins**: Handles the CI/CD pipeline.
-    
-- **Docker Registry**: Stores Docker images.
-    
-- **Trivy**: Performs vulnerability scanning.
-    
-- **NGINX**: Adds basic authentication to the registry.
-    
+   * Scans the Docker image for **HIGH** and **CRITICAL** vulnerabilities.
+   * Saves the report in a text file and archives it as a Jenkins artifact.
 
-## 1. Registry Setup
+4. **Local Docker registry management**
 
-### NGINX Basic Auth Setup
+   * Ensures a **local registry** is running on port `5000`.
+   * Automatically starts the registry if it is not running.
 
-1. **Install NGINX**: Make sure NGINX is installed on the server that will host your Docker registry.
-    
-    ```bash
-    sudo apt update && sudo apt install -y nginx
-    ```
-    
-2. **Create a password file for basic auth**:
-    
-    Use the `htpasswd` command to create a user and password for basic authentication.
-    
-    ```bash
-    sudo apt-get install apache2-utils
-    sudo htpasswd -c /etc/nginx/.htpasswd myuser
-    ```
-    
-3. **Configure NGINX**:
-    
-    Edit the NGINX configuration file to add basic authentication to your Docker registry.
-   
-    ```nginx
-    server {
-        listen 80;
-        server_name localhost;
-    
-        location /v2/ {
-            auth_basic "Restricted Access";
-            auth_basic_user_file /etc/nginx/.htpasswd;
-    
-            proxy_pass http://localhost:5000;
-        }
-    }
-    ```
- **or for more secured step :**
+5. **Push Docker image to local registry**
 
-```nginx
-# 🔁 Redirect HTTP to HTTPS
-server {
-    listen 80;
-    server_name myregistry.example.com;
+   * Tags and pushes the image to `localhost:5000`.
 
-    return 301 https://$host$request_uri;
-}
+6. **Artifact management**
 
-# 🔐 HTTPS Server Block – Serve Secure Docker Registry
-server {
-    listen 443 ssl;
-    server_name myregistry.example.com;
+   * Archives Trivy scan reports for easy access after each build.
 
-    ssl_certificate /etc/ssl/certs/your-cert.crt;
-    ssl_certificate_key /etc/ssl/private/your-cert.key;
+---
 
-    location / {
-        proxy_pass http://localhost:5000;
-    }
-}
-```
+## Pipeline Overview
 
-**📂 Where Do You Put This?**
+### Environment Variables
 
-create a new config file like /etc/nginx/sites-available/registry
+| Variable                  | Description                                              |
+| ------------------------- | -------------------------------------------------------- |
+| `DOCKER_REGISTRY`         | Address of the local Docker registry (`localhost:5000`). |
+| `IMAGE_NAME`              | Name of the Docker image to build (`myapp`).             |
+| `IMAGE_TAG`               | Version tag of the Docker image (`5`).                   |
+| `REGISTRY_CONTAINER_NAME` | Name of the local registry container (`local-registry`). |
 
-**Then symlink it:**
+### Stages
 
-```bash
-sudo ln -s /etc/nginx/sites-available/registry /etc/nginx/sites-enabled/
-sudo nginx -t    # check for syntax errors
-sudo systemctl reload nginx
-```
-    
-5. **Restart NGINX**:
-    
-    After configuring NGINX, restart the service.
-    
-    ```bash
-    sudo systemctl restart nginx
-    ```
-    
-6. **Test the authentication**:
-    
-    Try accessing the registry URL (`http://localhost:5000`) in a browser or through a `curl` command.
-    You should be prompted for the username and password you created.
-    
+1. **Checkout SCM**
 
-### Local Docker Registry Config
+   * Pulls the latest code from the source control repository.
 
-1. **Run the Docker Registry**:
+2. **Install Trivy**
 
-    Start a Docker registry on your local machine with NGINX basic authentication.
-    
-    ```bash
-    docker run -d -p 5000:5000 --name registry registry:2
-    ```
-    
-    The Docker registry will be accessible on `localhost:5000`.
+   * Checks if Trivy is installed.
+   * If missing, installs it using the **APT repository method**:
 
-2. **Configure Docker to use the local registry**:  (only for HTTP type registry, No need this if you configure HTTPS in Nginx server)
+     * Installs prerequisites: `wget`, `apt-transport-https`, `gnupg`, `lsb-release`.
+     * Downloads and adds Aqua Security’s **public GPG key**.
+     * Adds Trivy’s **APT repository** for the system’s Linux distribution.
+     * Updates package lists and installs Trivy.
+     * Verifies installation with `trivy --version`.
 
-    To push and pull images, you’ll need to configure Docker to trust the registry.
-    
-    Add the following to `/etc/docker/daemon.json`:
-    
-    ```json
-    {
-        "insecure-registries" : ["localhost:5000"]
-    }
-    ```
-    
- 3.  **Then restart Docker**: 
-    
-    ```bash
-    sudo systemctl restart docker
-    ```
-    
+3. **Build Docker Image**
 
-## 2. CI/CD Pipeline
+   * Builds the Docker image using the repository’s `Dockerfile`.
+   * Tags the image as `${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}`.
 
-### Jenkinsfile Breakdown
+4. **Trivy Vulnerability Scan**
 
-This Jenkinsfile is used to automate the build, scan, and push process for Docker images.
+   * Scans the built Docker image for **HIGH** and **CRITICAL** vulnerabilities.
+   * Saves the scan report as `trivy-report-${IMAGE_TAG}.txt`.
 
-1. **Build Docker Image**:
+5. **Ensure Local Registry Running**
 
-	
-    - The pipeline builds a Docker image from a local `Dockerfile`.
-        
-    - The image is tagged and pushed to the local Docker registry.
-        
-2. **Trivy Vulnerability Scan**:
+   * Checks if a container with name `${REGISTRY_CONTAINER_NAME}` is running.
+   * If not, starts a new registry container in **detached mode** (`-d`) with `--restart=always` on port 5000.
 
-	
-    - Trivy scans the built Docker image for high and critical vulnerabilities.
-        
-    - The report is saved as a `.txt` file for archiving.
-        
-3. **Push to Local Registry**:
+6. **Push to Local Registry**
 
-    - After scanning, the image is pushed to the local Docker registry.
-        
-4. **Archive Artifacts**:
+   * Pushes the Docker image to the local registry at `localhost:5000`.
 
-    - The Trivy report file is archived as an artifact for further review.
-        
+7. **Archive Scan Report**
 
-### Trivy Usage
+   * Archives the Trivy scan report as a Jenkins artifact.
 
-- **Trivy Command**:
-    
-    In the Jenkins pipeline, Trivy is run with the following command to scan for **high** and **critical** vulnerabilities in the Docker image:
-    
-    ```bash
-    trivy image --severity HIGH,CRITICAL --format table --output trivy-report-5.txt localhost:5000/myapp:5
-    ```
-    
+---
 
-### Docker Build + Push
+### Post Actions
 
-1. **Build Docker Image**: Jenkins uses the `docker build` command to create an image from the Dockerfile.
-    
-    Example:
-    
-    ```bash
-    docker build -t localhost:5000/myapp:5 .
-    ```
-    
-2. **Push Docker Image**: The image is then pushed to the local registry.
-    
-    Example:
-    
-    ```bash
-    docker push localhost:5000/myapp:5
-    ```
-    
+* Always archives the Trivy scan report, even if the pipeline fails or aborts.
 
-## Usage Instructions
+---
 
-1. **Clone the Repository**:
+## Prerequisites
 
+1. Jenkins server with **Docker installed** on the agent.
+2. EC2 or Linux machine with **sudo access** for installing Trivy.
+3. Docker daemon must be running.
+4. Optional: Existing local registry container (the pipeline can start it automatically if missing).
 
-    ```bash
-    git clone https://github.com/kapilanramesh/docker-project.git
-    cd docker-project
-    ```
-    
-2. **Run the Jenkins Pipeline**:
+---
 
+## Usage
 
-    - Ensure that Jenkins is set up and running.
-        
-    - Create a new Jenkins job and configure it to use the `Jenkinsfile` from this repository.
-        
-    - Trigger the pipeline to start building and pushing the Docker image.
-        
-3. **Access the Local Registry**:
+1. Copy the Jenkinsfile into your repository root.
+2. Configure a Jenkins pipeline job to point to your repository.
+3. Run the pipeline.
+4. After execution, you can:
 
+   * View the **Trivy vulnerability report** in the archived artifacts.
+   * Access the Docker image in the local registry (`localhost:5000/myapp:5`).
 
-    - After the image is built and pushed, you can access it by pulling from `localhost:5000/myapp:5`.
-        
-    
-    ```bash
-    docker pull localhost:5000/myapp:5
-    ```
-    
-4. **View Trivy Report**:
+---
 
+## Notes
 
-    - The Trivy report is available as an archived artifact in Jenkins.
-        
-    - You can review the vulnerabilities that were detected during the scan.
-        
+* The Trivy installation is **secure and verified** using Aqua Security’s public GPG key.
+* The local registry is **persistent** due to the `--restart=always` flag.
+* This pipeline is fully automated and **idempotent**, meaning it can run multiple times without breaking.
+
+---
+
+Do you want me to make that diagram?
